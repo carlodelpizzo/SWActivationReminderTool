@@ -105,7 +105,7 @@ def monitor():
                 pass
 
             if waiting_for_reopen:
-                win.after(100, lambda: wait_for_reopen(win))
+                win.after(1000, lambda: wait_for_reopen(win))
 
         root = tk.Tk()
         root.geometry('500x175')
@@ -118,7 +118,7 @@ def monitor():
                                   font=('Arial', 15))
         reminder_label.pack()
 
-        root.after(100, lambda: wait_for_reopen(root))
+        root.after(1000, lambda: wait_for_reopen(root))
         root.mainloop()
 
 
@@ -135,5 +135,14 @@ def main():
         monitor()
 
 
+# appdata_path = os.environ['APPDATA']
+# working_folder = 'SWReminderTool'
+# working_dir = f'{appdata_path}/{working_folder}'
+
 if __name__ == '__main__':
-    main()
+    exception_counter = 0
+    while exception_counter < 10000:
+        try:
+            main()
+        except:
+            exception_counter += 1
