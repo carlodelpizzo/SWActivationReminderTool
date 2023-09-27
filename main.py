@@ -139,10 +139,7 @@ def main():
 # working_folder = 'SWReminderTool'
 # working_dir = f'{appdata_path}/{working_folder}'
 
+
+# Errors to fix: situation where SW is activated somewhere else
 if __name__ == '__main__':
-    exception_counter = 0
-    while exception_counter < 10000:
-        try:
-            main()
-        except:
-            exception_counter += 1
+    main()
