@@ -43,9 +43,13 @@ def auto_activate():
     try:
         window_handle = findwindows.find_window(title='SOLIDWORKS Product Activation')
         sw_app = application.Application().connect(handle=window_handle)
+        print('First window dialog start')
         first_click(sw_app)
+        print('Second window dialog start')
         second_click(sw_app)
+        print('Waiting for \'finish\' button')
         finish_click(sw_app)
+        print('Finished auto-activation')
         return True
     except findwindows.WindowNotFoundError:
         return False
@@ -59,6 +63,7 @@ def monitor():
     except findwindows.WindowNotFoundError:
         return monitor()
     monitor_loop = True
+    print('Starting monitor loop')
     while monitor_loop:
         try:
             findwindows.find_window(title_re='SOLIDWORKS Professional*')
@@ -73,6 +78,7 @@ def monitor():
             sw_dlg = sw_app.top_window()
             try:
                 if 'deactivate' in sw_dlg.Edit1.texts()[0]:
+                    print('Auto-deactivation started')
                     sw_dlg['Select All'].click()
                     sw_dlg['&Next >'].click()
                     waiting_for_deactivation = True
@@ -81,6 +87,7 @@ def monitor():
         except findwindows.WindowNotFoundError:
             pass
         while waiting_for_deactivation:
+            print('Waiting for deactivation \'finish\' button')
             sw_dlg = sw_app.top_window()
             try:
                 if sw_dlg.GroupBox1.texts()[0] == 'Result':
@@ -92,14 +99,18 @@ def monitor():
             except findbestmatch.MatchError:
                 pass
     if not sw_open and activation_state:
+        print('Detected close without deactivation')
+
         def null_func():
             pass
 
         def wait_for_reopen(win):
+            print('Waiting for SW to be reopened')
             waiting_for_reopen = True
             try:
                 findwindows.find_window(title_re='SOLIDWORKS Professional*')
                 win.destroy()
+                print('Detected SW opened')
                 waiting_for_reopen = False
             except findwindows.WindowNotFoundError:
                 pass
@@ -125,13 +136,16 @@ def monitor():
 def main():
     try:
         findwindows.find_window(title_re='SOLIDWORKS Professional*')
+        print('Detected State: Activated')
         monitor()
     except findwindows.WindowNotFoundError:
         pass
 
     while True:
+        print('Waiting to auto-activate')
         while not auto_activate():
             pass
+        print('Monitoring for deactivation')
         monitor()
 
 
@@ -140,6 +154,6 @@ def main():
 # working_dir = f'{appdata_path}/{working_folder}'
 
 
-# Errors to fix: situation where SW is activated somewhere else
+# Errors to fix: situation where SW is activated somewhere else; desync
 if __name__ == '__main__':
     main()
