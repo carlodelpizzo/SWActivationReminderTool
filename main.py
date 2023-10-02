@@ -154,6 +154,9 @@ def main():
 # working_dir = f'{appdata_path}/{working_folder}'
 
 
-# Errors to fix: situation where SW is activated somewhere else; desync
+# To do:
+# situation where SW is activated somewhere else (except controls.hwndwrapper.InvalidWindowHandle)
+# potential desync
+# save window handle and don't search each time
 if __name__ == '__main__':
     main()
