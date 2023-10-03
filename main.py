@@ -1,4 +1,6 @@
 import tkinter as tk
+import traceback
+import os
 from pywinauto import application, findwindows, findbestmatch, controls
 
 
@@ -55,13 +57,17 @@ def auto_activate():
         return False
 
 
-def monitor():
+def monitor(counter=0):
     try:
         findwindows.find_window(title_re='SOLIDWORKS Professional*')
         activation_state = True
         sw_open = True
     except findwindows.WindowNotFoundError:
-        return monitor()
+        if counter > 50:
+            print('Error: SW not found')
+            return
+        counter += 1
+        return monitor(counter)
     monitor_loop = True
     print('Starting monitor loop')
     while monitor_loop:
@@ -105,7 +111,6 @@ def monitor():
             pass
 
         def wait_for_reopen(win):
-            print('Waiting for SW to be reopened')
             waiting_for_reopen = True
             try:
                 findwindows.find_window(title_re='SOLIDWORKS Professional*')
@@ -129,6 +134,7 @@ def monitor():
                                   font=('Arial', 15))
         reminder_label.pack()
 
+        print('Waiting for SW to be reopened')
         root.after(1000, lambda: wait_for_reopen(root))
         root.mainloop()
 
@@ -159,4 +165,22 @@ def main():
 # potential desync
 # save window handle and don't search each time
 if __name__ == '__main__':
-    main()
+    app_dir = ''.join([os.environ['APPDATA'], '/SWReminderTool'])
+    log_file_path = app_dir + '/log.txt'
+    stars = '***************************\n***************************\n***************************\n'
+    if not os.path.isdir(app_dir):
+        os.mkdir(app_dir)
+    while True:
+        try:
+            main()
+        except:
+            print(traceback.format_exc())
+            if not os.path.isfile(log_file_path):
+                with open(log_file_path, 'w', errors='ignore') as log_file:
+                    log_file.writelines(''.join([stars, traceback.format_exc(), '\n']))
+            else:
+                with open(log_file_path, 'r', errors='ignore') as log_file:
+                    log_txt = log_file.readlines()
+                log_txt.append(''.join([stars, traceback.format_exc(), '\n']))
+                with open(log_file_path, 'w', errors='ignore') as log_file:
+                    log_file.writelines(log_txt)
