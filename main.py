@@ -161,7 +161,10 @@ def main():
 
 
 # To do:
-# situation where SW is activated somewhere else (except controls.hwndwrapper.InvalidWindowHandle)
+# situation where SW is activated somewhere else
+# except controls.hwndwrapper.InvalidWindowHandle: Handle ### is not a valid window handle
+# except findwindows.ElementAmbiguousError: There are # elements that match the criteria
+# except findwindows.WindowAmbiguousError
 # potential desync
 # save window handle and don't search each time
 if __name__ == '__main__':
