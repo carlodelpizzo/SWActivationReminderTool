@@ -1,3 +1,4 @@
+import contextlib
 import tkinter as tk
 import traceback
 import os
@@ -36,12 +37,9 @@ def auto_activate():
         except findbestmatch.MatchError:
             finish_click(app)
 
-    try:
+    with contextlib.suppress(findwindows.WindowNotFoundError):
         findwindows.find_window(title_re='SOLIDWORKS Professional*')
         return True
-    except findwindows.WindowNotFoundError:
-        pass
-
     try:
         window_handle = findwindows.find_window(title='SOLIDWORKS Product Activation')
         sw_app = application.Application().connect(handle=window_handle)
@@ -77,33 +75,26 @@ def monitor(counter=0):
             sw_open = False
             break
         waiting_for_deactivation = False
-        sw_app = None
-        try:
+        with contextlib.suppress(findwindows.WindowNotFoundError):
             window_handle = findwindows.find_window(title='SOLIDWORKS Product Activation')
             sw_app = application.Application().connect(handle=window_handle)
             sw_dlg = sw_app.top_window()
-            try:
+            with contextlib.suppress(findbestmatch.MatchError, controls.hwndwrapper.InvalidWindowHandle):
                 if 'deactivate' in sw_dlg.Edit1.texts()[0]:
                     print('Auto-deactivation started')
                     sw_dlg['Select All'].click()
                     sw_dlg['&Next >'].click()
                     waiting_for_deactivation = True
-            except (findbestmatch.MatchError, controls.hwndwrapper.InvalidWindowHandle):
-                pass
-        except findwindows.WindowNotFoundError:
-            pass
         while waiting_for_deactivation:
             print('Waiting for deactivation \'finish\' button')
             sw_dlg = sw_app.top_window()
-            try:
+            with contextlib.suppress(findbestmatch.MatchError):
                 if sw_dlg.GroupBox1.texts()[0] == 'Result':
                     sw_dlg['Finish'].click()
                     sw_open = False
                     activation_state = False
                     monitor_loop = False
                     waiting_for_deactivation = False
-            except findbestmatch.MatchError:
-                pass
     if not sw_open and activation_state:
         print('Detected close without deactivation')
 
@@ -111,15 +102,11 @@ def monitor(counter=0):
             pass
 
         def wait_for_reopen(win):
-            waiting_for_reopen = True
-            try:
+            with contextlib.suppress(findwindows.WindowNotFoundError):
                 findwindows.find_window(title_re='SOLIDWORKS Professional*')
                 win.destroy()
                 print('Detected SW opened')
                 waiting_for_reopen = False
-            except findwindows.WindowNotFoundError:
-                pass
-
             if waiting_for_reopen:
                 win.after(1000, lambda: wait_for_reopen(win))
 
@@ -140,19 +127,22 @@ def monitor(counter=0):
 
 
 def main():
-    try:
+    with contextlib.suppress(findwindows.WindowNotFoundError):
         findwindows.find_window(title_re='SOLIDWORKS Professional*')
         print('Detected State: Activated')
         monitor()
-    except findwindows.WindowNotFoundError:
-        pass
-
     while True:
         print('Waiting to auto-activate')
         while not auto_activate():
             pass
         print('Monitoring for deactivation')
         monitor()
+
+
+class SWReminderTool:
+    def __init__(self):
+        self.state = ''
+        self.win_handle = ''
 
 
 # appdata_path = os.environ['APPDATA']
@@ -169,14 +159,14 @@ def main():
 # save window handle and don't search each time
 if __name__ == '__main__':
     app_dir = ''.join([os.environ['APPDATA'], '/SWReminderTool'])
-    log_file_path = app_dir + '/log.txt'
+    log_file_path = f'{app_dir}/log.txt'
     stars = '***************************\n***************************\n***************************\n'
     if not os.path.isdir(app_dir):
         os.mkdir(app_dir)
     while True:
         try:
             main()
-        except:
+        finally:
             print(traceback.format_exc())
             if not os.path.isfile(log_file_path):
                 with open(log_file_path, 'w', errors='ignore') as log_file:
